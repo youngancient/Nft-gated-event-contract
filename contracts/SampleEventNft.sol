@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CorpPepe is ERC721, ERC721URIStorage, Ownable {
+contract DevfestLagos is ERC721, ERC721URIStorage, Ownable {
     constructor()
-        ERC721("CorpPepe", "MRPEPE")
+        ERC721("DevfestLagos", "DLA")
         Ownable(msg.sender)
     {}
 
