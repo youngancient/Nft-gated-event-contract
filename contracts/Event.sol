@@ -34,11 +34,11 @@ contract EventManager {
 
     uint256 public usersCount;
 
-    mapping(uint => EventObj) eventObjects;
-    
+    mapping(uint => EventObj) public eventObjects;
+
     // hasRegistered[userAddress][eventId] -> bool
-    mapping(address => mapping(uint => bool)) hasRegisteredForEvent;
-    mapping(address => mapping(uint => bool)) hasAttendedEvent;
+    mapping(address => mapping(uint => bool)) public hasRegisteredForEvent;
+    mapping(address => mapping(uint => bool)) public hasAttendedEvent;
 
     // not important, just for better user experience
     struct User {
@@ -48,7 +48,7 @@ contract EventManager {
         uint256[] attendedEventIds;
     }
     // keeps track of all users
-    User[] public users;
+    User[] users;
     mapping(address => User) userObj;
 
     // internal functions
@@ -114,7 +114,7 @@ contract EventManager {
     // @dev: For admins to create an event
     //@notice: This fn is open because anyone who creates an event is the manager for that event
 
-    function createEvent(
+    function createEventMax(
         address _nftAddress,
         string memory _eventName,
         EventType _eventType,
@@ -261,27 +261,33 @@ contract EventManager {
             revert Errors.DoesNotHaveEventNFT();
         }
         // create the user
-        uint256[] memory _defaultList;
-        uint256[] memory _AttendedList;
-        _AttendedList[0] = _eventId;
+
+        // if user exists
 
         uint256 _usersCount = usersCount + 1;
-        User memory _user = User(
-            _usersCount,
-            _name,
-            _AttendedList,
-            _defaultList
-        );
 
-        userObj[msg.sender] = _user;
-        users.push(_user);
+        if (userObj[msg.sender].id < 1) {
+            uint256[] memory _registeredList;
+            uint256[] memory _AttendedList;
+            User memory _user = User(
+                _usersCount,
+                _name,
+                _registeredList,
+                _AttendedList
+            );
+
+            userObj[msg.sender] = _user;
+            users.push(_user);
+        }
+
+        userObj[msg.sender].registeredEventIds.push(_eventId);
 
         hasRegisteredForEvent[msg.sender][_eventId] = true;
         validEvent.numberOfRegisteredPersons += 1;
         validEvent.registeredPersons.push(msg.sender);
         usersCount = _usersCount;
 
-        emit Events.EventSignInSuccessful(
+        emit Events.EventRegistrationSuccessful(
             _eventId,
             msg.sender,
             validEvent.eventName
@@ -315,7 +321,7 @@ contract EventManager {
 
         userObj[msg.sender].attendedEventIds.push(_eventId);
 
-        emit Events.EventRegistrationSuccessful(
+        emit Events.EventSignInSuccessful(
             _eventId,
             msg.sender,
             validEvent.eventName
