@@ -262,9 +262,10 @@ contract EventManager {
         }
         // create the user
 
-        // if user exists
 
         uint256 _usersCount = usersCount + 1;
+
+        // if user does not exist
 
         if (userObj[msg.sender].id < 1) {
             uint256[] memory _registeredList;
