@@ -35,6 +35,7 @@ contract EventManager {
     uint256 public usersCount;
 
     mapping(uint => EventObj) eventObjects;
+    
     // hasRegistered[userAddress][eventId] -> bool
     mapping(address => mapping(uint => bool)) hasRegisteredForEvent;
     mapping(address => mapping(uint => bool)) hasAttendedEvent;
@@ -64,13 +65,13 @@ contract EventManager {
         }
     }
 
-    function _onlyEventManager(uint256 _eventId) private view{
-        if(!(eventObjects[_eventId].manager == msg.sender)){
+    function _onlyEventManager(uint256 _eventId) private view {
+        if (!(eventObjects[_eventId].manager == msg.sender)) {
             revert Errors.NotAManager();
         }
     }
 
-    // creates an event
+    //@dev: creates an event making the creator the manager
     function _createEvent(
         uint256 _id,
         address _nftAddress,
@@ -106,6 +107,13 @@ contract EventManager {
 
     // external functions
 
+    /* -----------------/
+    / @Manager functions /
+    /----------------*/
+
+    // @dev: For admins to create an event
+    //@notice: This fn is open because anyone who creates an event is the manager for that event
+
     function createEvent(
         address _nftAddress,
         string memory _eventName,
@@ -135,6 +143,7 @@ contract EventManager {
         );
     }
 
+    // @dev: function overloading with createEvent above
     function createEvent(
         address _nftAddress,
         string memory _eventName,
@@ -162,14 +171,64 @@ contract EventManager {
         );
     }
 
-    // function updateEvent() external {
+    //@dev:  For managers to get all event registered persons
+    function getAllEventRegisteredPersons(
+        uint256 _eventId
+    ) external view returns (address[] memory) {
+        if (eventObjects[_eventId].id < 1) {
+            revert Errors.InvalidEventId();
+        }
+        _onlyEventManager(_eventId);
+        return eventObjects[_eventId].registeredPersons;
+    }
 
-    //}
+    //@dev: For managers to get all event attendees
+    function getAllEventAttendees(
+        uint256 _eventId
+    ) external view returns (uint256) {
+        if (eventObjects[_eventId].id < 1) {
+            revert Errors.InvalidEventId();
+        }
+        _onlyEventManager(_eventId);
+        return eventObjects[_eventId].numberOfAttendees;
+    }
 
-    // get all event applicants
-    //get all event attendees
+    //@dev : for manager to update an existing event
+    function updateEvent(
+        uint256 _eventId,
+        uint256 _newMaxRegistrations,
+        address _newNftAddress,
+        string memory _newEventName
+    ) external {
+        _sanityCheck(msg.sender);
+        _zeroValueCheck(_eventId);
+        _zeroValueCheck(_newMaxRegistrations);
 
-    function registerForEvent(string memory _name, uint256 _eventId) external {
+        _onlyEventManager(_eventId);
+
+        if (eventObjects[_eventId].id < 1) {
+            revert Errors.InvalidEventId();
+        }
+
+        if (
+            _newMaxRegistrations <
+            eventObjects[_eventId].numberOfRegisteredPersons
+        ) {
+            revert Errors.MaxRegistrationCantBeLessThanRegistrations();
+        }
+        // check if event is a valid one
+        EventObj storage validEvent = eventObjects[_eventId];
+        // what if a user with the previous NFT has registered?
+        validEvent.nftAddress = _newNftAddress;
+        validEvent.eventName = _newEventName;
+    }
+
+    /* -----------------/
+    / @Users functions /
+    /----------------*/
+
+    // @user: for users to register for an event
+    function registerForEvent(uint256 _eventId, string memory _name) external {
         _sanityCheck(msg.sender);
         _zeroValueCheck(_eventId);
 
@@ -229,6 +288,7 @@ contract EventManager {
         );
     }
 
+    // @user: for users to sign in to an existing event
     function signInForEvent(uint256 _eventId) external {
         _sanityCheck(msg.sender);
         _zeroValueCheck(_eventId);
@@ -252,7 +312,7 @@ contract EventManager {
         }
 
         hasAttendedEvent[msg.sender][_eventId] = true;
-        
+
         userObj[msg.sender].attendedEventIds.push(_eventId);
 
         emit Events.EventRegistrationSuccessful(

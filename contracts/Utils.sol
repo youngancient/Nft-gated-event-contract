@@ -13,6 +13,7 @@ library Errors {
     error DoesNotHaveEventNFT();
     error MaxRegistrationsExceeded();
     error CannotSigninToUnRegisteredEvent();
+    error MaxRegistrationCantBeLessThanRegistrations();
 }
 
 library Events {
